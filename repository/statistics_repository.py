@@ -53,8 +53,12 @@ def find_injuries_by_area(area_code: str):
             '_id': 0
         } }
     ]))
-    return all_injuries
 
+    for injury in all_injuries:
+        for accident in injury['accidents']:
+            accident['_id'] = str(accident['_id'])
+
+    return all_injuries
 
 def find_number_accident_by_area(area_code: str):
     all_accidents = list(area.find(
