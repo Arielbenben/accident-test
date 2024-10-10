@@ -1,5 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, jsonify, request
+
+from database.connect import area_cause
 from repository.database_repository import init_database
 from repository.statistics_repository import (find_number_accident_by_area,
                                               find_number_accident_by_area_and_time,
@@ -27,12 +29,12 @@ def find_number_accident_in_area_route(area_code:str):
         return jsonify({'Error': str(e)}), 500
 
 
-@statistic_accident_blueprint.route('/area_time', methods=['GET'])
-def find_number_accident_in_area_in_specific_time_route():
+@statistic_accident_blueprint.route('/area_time/<string:area_code>', methods=['GET'])
+def find_number_accident_in_area_in_specific_time_route(area_code: str):
     try:
-        json = request.json
-        convert_to_date = datetime.strptime(json['date'], '%m/%d/%Y')
-        number_accident = find_number_accident_by_area_and_time(json['area_code'], convert_to_date)
+        date = request.args.get('date', type=str)
+        convert_to_date = datetime.strptime(date, '%m/%d/%Y')
+        number_accident = find_number_accident_by_area_and_time(area_code, convert_to_date)
         return jsonify(number_accident), 200
     except Exception as e:
         return jsonify({'Error': str(e)}), 500

@@ -15,31 +15,27 @@ def client(app):
     return app.test_client()
 
 
-def test_get_injury_statistic_api(client):
-    response = client.get('/get_injury_statistic/225')
+def test_init_data_db_route(client):
+    response = client.post('/init')
+    assert response.status_code == 201
+
+
+def test_find_number_accident_in_area_route(client):
+    response = client.get('/accident_area/225')
     assert response.status_code == 200
 
 
-def test_get_injury_reason_by_region_api(client):
-    response = client.get('/get_injury_reason_by_region/225')
+def test_find_number_accident_in_area_in_specific_time_route(client):
+    response = client.get('/area_time/225?date=09/05/2023')
     assert response.status_code == 200
 
 
-def test_get_injury_by_region_api(client):
-    response = client.get('/get_injury_by_region/225')
+def test_get_accidents_group_by_cause_route(client):
+    response = client.get('/group_cause/225')
     assert response.status_code == 200
 
 
-def test_get_injury_by_month_and_region_api(client):
-    response = client.get('get_injury_by_month_and_region/02/1652')
+def test_get_injuries_in_area_route(client):
+    response = client.get('/injuries_area/225')
     assert response.status_code == 200
 
-
-def test_get_injury_by_date_and_region_api(client):
-    response = client.get('/get_injury_by_date_and_region/225?date=09/05/2023')
-    assert response.status_code == 200
-
-
-def test_get_injuries_in_week_from_date_and_region_api(client):
-    response = client.get('/get_injuries_in_week_from_date_and_region/225?date=09/05/2023')
-    assert response.status_code == 200
