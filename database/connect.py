@@ -10,6 +10,7 @@ daily = accidents_db['daily']
 weekly = accidents_db['weekly']
 monthly = accidents_db['monthly']
 area = accidents_db['area']
+area_cause = accidents_db['area_cause']
 
 
 

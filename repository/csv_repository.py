@@ -1,6 +1,6 @@
 import csv
 import os
-from database.connect import daily,weekly, monthly,area,accidents
+from database.connect import daily,weekly, monthly,area,accidents,area_cause
 from utils.date_utils import convert_to_date,get_week_range,get_month_range,convert_to_int
 
 
@@ -27,6 +27,7 @@ def init_accidents_db():
        converted_to_date = convert_to_date(row['CRASH_DATE'])
 
        accident = {
+           'crash_id': row['CRASH_RECORD_ID'],
            'crash_date': converted_to_date,
            'beat_of_occurrence': row['BEAT_OF_OCCURRENCE'],
            'injuries': {
@@ -78,7 +79,7 @@ def init_accidents_db():
            upsert=True
        )
 
-       area.update_one(
+       area_cause.update_one(
            {'beat_of_occurrence': row['BEAT_OF_OCCURRENCE'],
             'prim_contributory_cause': row['PRIM_CONTRIBUTORY_CAUSE'] },
            {
@@ -94,8 +95,23 @@ def init_accidents_db():
            upsert=True
        )
 
+       area.update_one(
+           { 'beat_of_occurrence': row['BEAT_OF_OCCURRENCE'] },
+           {
+               '$inc': {
+                   'sum_accident': 1,
+                   'injuries.total': convert_to_int(row['INJURIES_TOTAL']),
+                   'injuries.fatal': convert_to_int(row['INJURIES_FATAL']),
+                   'injuries.incapacitating': convert_to_int(row['INJURIES_INCAPACITATING']),
+                   'injuries.non_incapacitating': convert_to_int(row['INJURIES_NON_INCAPACITATING']),
+               },
+               '$push': {'crash_id': row['CRASH_RECORD_ID']}
+           },
+           upsert=True
+       )
 
 
+init_accidents_db()
 
 
 
