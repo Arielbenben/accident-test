@@ -4,7 +4,6 @@ from repository.statistics_repository import find_number_accident_by_area_and_ti
 
 
 
-
 def test_find_number_accident_by_area_and_time():
    result = find_number_accident_by_area_and_time('225', datetime(2023, 10, 5))
    assert len(result) > 0
