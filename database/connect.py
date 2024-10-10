@@ -2,14 +2,15 @@ from pymongo import MongoClient
 
 
 client = MongoClient('mongodb://172.19.191.59:27017')
-taxi_db = client['taxi-drivers']
+accidents_db = client['accidents']
 
 
-drivers = taxi_db['drivers']
-cars = taxi_db['cars']
+daily = accidents_db['daily']
+weekly = accidents_db['weekly']
+monthly = accidents_db['monthly']
+area = accidents_db['area']
+reason = accidents_db['reason']
 
-customers = taxi_db['customers']
-products = taxi_db['products']
-invoices = taxi_db['invoices']
+
 
 

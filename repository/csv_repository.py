@@ -1,8 +1,7 @@
 import csv
 import os
-
-
-from database.connect import taxi_db, drivers, cars
+from database.connect import daily,weekly, monthly,area, reason
+from utils.date_utils import convert_to_date,get_week_range,get_month_range,convert_to_int
 
 
 def read_csv(csv_path):
@@ -11,36 +10,98 @@ def read_csv(csv_path):
        for row in csv_reader:
            yield row
 
-def init_taxi_drivers():
-   drivers.drop()
-   cars.drop()
+def init_accidents_db():
+   daily.drop()
+   weekly.drop()
+   monthly.drop()
+   area.drop()
+   reason.drop()
 
-   path = os.path.join(os.path.dirname(__file__), '..', 'data', 'practice_data.csv')
-   for row in read_csv(path):
-       car = {
-           'license_id': row['CarLicense'],
-           'brand': row['CarBrand'],
-           'color': row['CarColor']
+
+   data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'data.csv')
+   for row in read_csv(data_path):
+
+       converted_to_date = convert_to_date( row['CRASH_DATE'] )
+
+       day = {
+           'crash_date': converted_to_date,
+           'beat_of_occurrence': row['BEAT_OF_OCCURRENCE'],
+
+           'injuries': { 'total': row['INJURIES_TOTAL'],
+                         'fatal': row['INJURIES_FATAL'],
+                         'incapacitating': row['INJURIES_INCAPACITATING'],
+                          'non_incapacitating': row['INJURIES_NON_INCAPACITATING'] },
+
+           'cause': { 'prim_contributory_cause': row['PRIM_CONTRIBUTORY_CAUSE'],
+                      'set_contributory_cause': row['SEC_CONTRIBUTORY_CAUSE'] }
+
        }
 
 
-       car_id = cars.insert_one(car).inserted_id
+       daily.insert_one(day)
 
+       start_week = get_week_range(converted_to_date)[0]
+       end_week = get_week_range(converted_to_date)[1]
 
-       address = {
-           'city': row['City'],
-           'street': row['Street'],
-           'state': row['State']
+       week = {
+           'start_week': start_week,
+           'end_week': end_week,
+           'beat_of_occurrence': row['BEAT_OF_OCCURRENCE'],
+           'crash_id': row['CRASH_RECORD_ID'],
        }
 
+       weekly.update_one(
+           { 'start_week': start_week, 'end_week': end_week,
+             'beat_of_occurrence': row['BEAT_OF_OCCURRENCE'] },
+           { '$set': week,
+             '$inc': {'sum_accident': 1}
+             },
+           upsert=True
+       )
 
-       driver = {
-           'passport': row['PassportNumber'],
-           'first_name': row['FullName'].split(' ')[0],
-           'last_name': row['FullName'].split(' ')[1],
-           'car_id': car_id,
-           'address': address
+       convert_to_month = get_month_range(converted_to_date)[0]
+       convert_to_year = get_month_range(converted_to_date)[1]
+
+       month = {
+           'month': start_week,
+           'year': end_week,
+           'beat_of_occurrence': row['BEAT_OF_OCCURRENCE'],
+           'crash_id': row['CRASH_RECORD_ID'],
        }
 
+       monthly.update_one(
+           { 'month': convert_to_month, 'year': convert_to_year,
+             'beat_of_occurrence': row['BEAT_OF_OCCURRENCE'], },
+           { '$set': month,
+             '$inc': { 'sum_accident': 1 }
+           },
 
-       drivers.insert_one(driver)
+           upsert=True
+       )
+
+       accident_area = {
+           'beat_of_occurrence': row['BEAT_OF_OCCURRENCE'],
+           'prim_contributory_cause': row['PRIM_CONTRIBUTORY_CAUSE'],
+           'crash_id': row['CRASH_RECORD_ID'],
+       }
+
+       area.update_one(
+           {'beat_of_occurrence': row['BEAT_OF_OCCURRENCE']},
+           {
+               '$set': accident_area,
+               '$inc': {
+                   'sum_accident': 1,
+                   'injuries.total': convert_to_int(row['INJURIES_TOTAL']),
+                   'injuries.fatal': convert_to_int(row['INJURIES_FATAL']),
+                   'injuries.incapacitating': convert_to_int(row['INJURIES_INCAPACITATING']),
+                   'injuries.non_incapacitating': convert_to_int(row['INJURIES_NON_INCAPACITATING'])
+               }
+           },
+
+           upsert=True
+       )
+init_accidents_db()
+
+
+
+
